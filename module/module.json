@@ -1,0 +1,16 @@
+{
+  "title": "GPS",
+  "type": "monitor",
+  "requires": [
+    "/usr/bin/python2.5",
+    "/usr/lib/python2.5/site-packages/location.so"
+  ],
+  "run": "python2.5 {dir}/gps-stream.py",
+  "deed": "gps_view",
+  "deeds": {
+    "gps_view": {
+      "group": "modules",
+      "xp": 3
+    }
+  }
+}
