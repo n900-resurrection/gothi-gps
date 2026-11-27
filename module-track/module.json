@@ -1,0 +1,16 @@
+{
+  "title": "GPS track",
+  "type": "python",
+  "entry": "module.py",
+  "requires": [
+    "/usr/bin/python2.5",
+    "/usr/lib/python2.5/site-packages/location.so",
+    "/opt/gothi/modules/gps/gps-stream.py"
+  ],
+  "deed": "gps_track_view",
+  "deeds": {
+    "gps_track_view": {"group": "modules", "xp": 1},
+    "track_recorded": {"group": "modules", "xp": 5},
+    "gpx_exported": {"group": "modules", "xp": 2}
+  }
+}

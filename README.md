@@ -21,4 +21,24 @@ The satellites only broadcast their orbits slowly (about 30 seconds per satellit
 - For the time of the run the helper sets the keys `/system/nokia/location/supl/server`, `.../supl/port` and `.../network-disabled` and puts the old values back at the end (the test checks it).
 - The format of the Garmin watches (EPO/CPE files) cannot be used: it belongs to other chips; the GPS of the N900 sits in the modem and takes assistance data only through SUPL.
 
-Package: `gothi-gps`, depends on `gothi (>= 0.7.0)` and `python-location`.
+
+## GPS track: record where you went, export GPX
+
+The entry **GPS track** in the menu Modules records a track and exports it as a **GPX 1.1** file. The recording runs in a **background process** (`module-track/recorder.py`), so it goes on when gothi is closed and the screen is off: start it, put the phone in a pocket, walk.
+
+- **Record**: OK starts and stops; the screen shows the time, the distance, the points kept and the fix (`3D fix 6/9 sat`, or `searching` with the satellites in use and in view). **Record with A-GPS** does the same with the helper in the A-GPS mode (see above) and asks first, because that one talks to a server.
+- **Tracks**: the recorded tracks, the newest first. A track has **Statistics** (points, distance, time, average and top speed, altitude, climbed metres), **Export GPX** and **Delete**.
+- The GPX is also written **automatically when the recording stops**, next to the track file.
+- A recording **without a fix is not kept**: if the GPS never found the satellites, no empty track is left behind.
+
+Files are in `~/MyDocs/gothi/tracks/` (on the phone: `/home/user/MyDocs/gothi/tracks`, which is what the USB storage mode and a file server show): `track-YYYYMMDD-HHMMSS.jsonl` is the track as it is written (one JSON per line, flushed at once, so a dead battery loses nothing; a half-written last line is skipped), `track-....gpx` is the export. The GPX has one `trk` with one `trkseg`, and for each point the latitude and longitude, the altitude (with a 3D fix), the time (UTC), the fix (`2d` / `3d`) and the number of satellites in use.
+
+Which fixes are kept (`tracklib.py`): at least 5 m and 2 s after the last kept one, and one every 30 s even when standing still; a fix that says it is worse than 100 m is dropped, and so is a jump that would need more than 430 km/h. The recording stops by itself after 8 hours. The altitude of a GPS jitters, so a climb counts only in steps of 3 m.
+
+A recording needs a GPS fix, which needs the open sky: see the cold start above (5 to 15 minutes without A-GPS). **The recorder has been tested with a fake GPS (made-up fixes) and on the phone indoors, where there is no fix; a real track under the open sky is still to be tried** ([#18](https://github.com/n900-resurrection/n900-gothi/issues/18)). The positions are personal data and stay on the phone; the module sends nothing anywhere, except in the A-GPS mode.
+
+For other modules (the planned wardriving, [#16](https://github.com/n900-resurrection/n900-gothi/issues/16)) the recorder keeps its state in `~/.cache/gothi/gps-track.json` (the latest fix, the satellites, the number of points and the distance, written every second), and `gps-stream.py --raw` prints one machine-readable line per half second: `FIX <mode> <lat> <lon> <alt> <speed km/h> <track> <error m> <time> <in view> <in use>` (`nan` where a value is not known), or `ERR <code>`.
+
+Tests: `python3 -m unittest discover -s tests` on a computer (50 tests: the parser, the filter, the file, the statistics, the GPX read back as XML, the real background process with a fake helper, all the screens) and `make test` on the phone.
+
+Package: `gothi-gps`, depends on `gothi (>= 0.11.0)`, `python-location` and `python3.11`.

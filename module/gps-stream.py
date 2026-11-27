@@ -7,6 +7,9 @@
 #       supl.nokia.com, does not exist any more. For the time of the run the keys /system/nokia/location/supl/server, .../supl/port and
 #       .../network-disabled are set, and put back at the end.
 #   - the system switch /system/nokia/location/gps-disabled is set to false for the time of the run and put back at the end
+#   - --raw: one machine-readable line per half second instead of the blocks (for the track recorder, the module GPS track):
+#       FIX <mode 0-3> <lat> <lon> <alt m> <speed km/h> <track deg> <error m> <time epoch> <satellites in view> <satellites used>   ("nan" = not known)
+#       ERR <code>                                                                                                                  (the GPS failed)
 #   - the position is shown only with a fix (the "last known" position of the system is not shown as if it were live)
 import os
 import signal
@@ -44,6 +47,7 @@ if was == "true":
     gconf("-s", "-t", "bool", KEY, "false")
 
 ASSISTED = "--assisted" in sys.argv
+RAW = "--raw" in sys.argv
 SUPL = "supl.google.com:7275"
 if ASSISTED:
     i = sys.argv.index("--assisted")
@@ -112,8 +116,28 @@ def frame():
     return lines
 
 
+def num(x, fmt):
+    return fmt % x if known(x) else "nan"
+
+
+def raw_line():
+    if state["error"] is not None:
+        return "ERR %s" % state["error"]
+    f = device.fix
+    mode = f[0]
+    good = mode >= 2                                # the position of a fix only: the position that the system remembers is not live
+    return "FIX %d %s %s %s %s %s %s %s %d %d" % (
+        mode, num(f[4], "%.7f") if good else "nan", num(f[5], "%.7f") if good else "nan", num(f[7], "%.1f") if mode == 3 else "nan",
+        num(f[11], "%.2f") if good else "nan", num(f[9], "%.1f") if good else "nan", num(f[6] / 100.0, "%.1f") if good and known(f[6]) else "nan",
+        num(f[2], "%.0f") if good else "nan", device.satellites_in_view, device.satellites_in_use)
+
+
 def tick():
-    out(frame())
+    if RAW:
+        sys.stdout.write(raw_line() + "\n")
+        sys.stdout.flush()
+    else:
+        out(frame())
     return True
 
 
@@ -125,7 +149,8 @@ control.connect("error", on_error)
 signal.signal(signal.SIGTERM, finish)
 signal.signal(signal.SIGINT, finish)
 control.set_properties(preferred_method=location.METHOD_AGNSS if ASSISTED else location.METHOD_GNSS, preferred_interval=location.INTERVAL_1S)
-out(["Starting GPS..."])
+if not RAW:
+    out(["Starting GPS..."])
 try:
     control.start()
     gobject.timeout_add(500, tick)             # also lets the signal handlers run
