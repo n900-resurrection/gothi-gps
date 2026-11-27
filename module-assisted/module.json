@@ -1,0 +1,17 @@
+{
+  "title": "GPS (A-GPS)",
+  "type": "monitor",
+  "requires": [
+    "/usr/bin/python2.5",
+    "/usr/lib/python2.5/site-packages/location.so",
+    "/opt/gothi/modules/gps/gps-stream.py"
+  ],
+  "run": "python2.5 /opt/gothi/modules/gps/gps-stream.py --assisted",
+  "deed": "gps_assisted_view",
+  "deeds": {
+    "gps_assisted_view": {
+      "group": "modules",
+      "xp": 3
+    }
+  }
+}

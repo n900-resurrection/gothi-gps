@@ -6,7 +6,7 @@ PROJ=/project
 . "$PROJ/scripts/debpack.sh"
 
 PKG=gothi-gps
-VERSION="${VERSION:-0.1.0}"
+VERSION="${VERSION:-0.2.0}"
 OUT="$PROJ/build/out/gothi-gps-$VERSION"
 STAGE="$PROJ/build/deb/stage-$PKG"
 HERE="$PROJ/apps/gothi-gps"
@@ -16,6 +16,7 @@ rm -rf "$STAGE"
 mkdir -p "$STAGE/opt/gothi/modules"
 cp -r "$OUT/module" "$STAGE/opt/gothi/modules/gps"
 chmod 755 "$STAGE/opt/gothi/modules/gps/gps-stream.py"
+cp -r "$OUT/module-assisted" "$STAGE/opt/gothi/modules/gps-assisted"        # the same helper with --assisted (A-GPS)
 
 SECTION=user/utilities
 DEPENDS="gothi (>= 0.7.0), python-location"
